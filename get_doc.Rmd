@@ -1,0 +1,92 @@
+---
+title: "open-doc"
+author: "LanBuFan"
+date: "September 26, 2018"
+output: html_document
+---
+
+```{r}
+library("reticulate")
+```
+
+* getting names of pdf opened in os
+* the objective of the code is to grab the name of all pdf document currently open on my computer and then open the mendeley bib file and check if the pdf document is already in the bib file. 
+
+*NOTE 1: I probably didnt need to use a Rmarkdown file type for such code, but since I am using Python, I assumed that reticulate only work with RMarkdown. Probably not, I could have saved the code in a normal r script file but I was too lazy to try it out and I knew that how to make it work wit .Rmd.
+
+*NOTE 2: Since psutil package (short for python system and utlities) access computer OS, I think it might be a bit different for MAC. See ressources online [link](https://stackoverflow.com/questions/45672468/installing-psutil-libraray-with-pip-on-osx-for-python)
+
+
+```{python}
+import psutil
+import os
+
+opened_pdf = []
+
+for p in psutil.process_iter():
+
+  # try/except loop look at all open and active process on computer, parse and keep only PDF
+  try:
+    p = p.open_files()
+    #print(type(p))
+    for x in p:
+      link = x.path
+      #print(type(link))
+      link = str(link)
+      if '.pdf' in link:
+        #print(link)
+        opened_pdf.append(link)
+        
+  except:
+    continue
+
+print(opened_pdf)
+
+# Current beta-code only works if ONLY ONE PDF is OPEN on COMPUTER
+
+#if len(opened_pdf) == 1:
+for pdf_link in opened_pdf:
+  #pdf_link = opened_pdf[0]
+  pdf_link_list = pdf_link.split('\\')
+  pdf = pdf_link_list[-1:]
+  pdf_string = pdf[0]
+  pdf_string_list = pdf_string.split('_')
+  markdown_ref = pdf_string_list[2] + pdf_string_list[1]
+  print(markdown_ref)
+  
+  # search and match with ref name in mendeley
+  # CODE below is a copy-paste from bib.py developed with on Sept. 26th, 2018
+  
+  folder_path = 'C:\\Users\\cinep\\Desktop\\Lanbufan-Razer\\1_ACADEMIC-LIFE\\1_UBC-PhD-PROGRAM_2014-2019 (m)\\3_DOCTORAL-DISSERTATION (M)\\4_PhD-Proposal\\1_Writing\\1_Memoing\\'
+
+  file_string = 'PHDD-BIB.bib'
+  f = open(folder_path + file_string, 'rb')
+  
+  neirong = f.read()
+  neirong = neirong.decode('utf8')
+  
+  neirong_list = neirong.split('\n')
+  
+  #ref_list = []
+  #author_list = []
+  ref_list_raw = []
+  
+  for article in neirong_list:
+      ref_content = []
+      if (article.startswith('@article') or article.startswith('@book') or article.startswith('@misc')):
+          # clean string
+          article = article.replace('@article{', '')
+          article = article.replace('@book{', '')
+          article = article.replace('@misc{', '')
+          article = article.replace(',' , '')
+          
+          if len(article) != 0:
+              ref_list_raw.append(article)
+              
+# Compare open PDF on computer with list of all ref in current bib file
+
+  if markdown_ref in ref_list_raw:
+    print('references in current mendeley bib file')
+  
+
+```
